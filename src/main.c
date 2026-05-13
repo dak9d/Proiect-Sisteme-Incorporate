@@ -1,57 +1,57 @@
+#include <stdint.h>
+
 #include "drivers/gpio/gpio.h"
 #include "drivers/pwm/pwm.h"
+#include "drivers/adc/adc.h"
+
 #include "bsp/nano.h"
 #include "utils/delay.h"
-#define BUTTON D2
-#define LED_GREEN D9
-#define LED_YELLOW D5
-#define LED_RED D6
-uint8_t mode = 0;
-uint8_t state = 0;
-void wait_button()
-{
-    Delay(200);
-    while (GPIO_Read(BUTTON) == 0);
-}
+
+// LED-uri
+#define LED_GREEN   D8
+#define LED_YELLOW  D9
+#define LED_RED     D10
+
+// Termistor pe ADC0
+#define TEMP_CHANNEL 0
+
+uint16_t temp_value;
+
+/* praguri simple (calibratezi tu) */
+#define COLD_THRESHOLD   400
+#define HOT_THRESHOLD    700
+
 int main(void)
 {
-    GPIO_Init(BUTTON, GPIO_INPUT);
-    GPIO_Write(BUTTON, GPIO_HIGH);
-    GPIO_Init(LED_GREEN, GPIO_OUTPUT);
-    GPIO_Init(LED_YELLOW, GPIO_OUTPUT);
-    GPIO_Init(LED_RED, GPIO_OUTPUT);
-    while (1)
+    ADC_Init();
+
+    PWM_Init(LED_GREEN, 1000);
+    PWM_Init(LED_YELLOW, 1000);
+    PWM_Init(LED_RED, 1000);
+
+    while(1)
     {
-        if (GPIO_Read(BUTTON) == 0)
+        temp_value = ADC_Read(TEMP_CHANNEL);
+
+        // reset LED-uri
+        PWM_SetDutyCycle(LED_GREEN, 0);
+        PWM_SetDutyCycle(LED_YELLOW, 0);
+        PWM_SetDutyCycle(LED_RED, 0);
+
+        // LOGICĂ SIMPLĂ
+        if(temp_value < COLD_THRESHOLD)
         {
-            mode = !mode;
-            wait_button();
+            PWM_SetDutyCycle(LED_GREEN, 255);
         }
-        GPIO_Write(LED_GREEN, GPIO_LOW);
-        GPIO_Write(LED_YELLOW, GPIO_LOW);
-        GPIO_Write(LED_RED, GPIO_LOW);
-        //SEMAFOR
-        if (mode == 0)
+        else if(temp_value < HOT_THRESHOLD)
         {
-            GPIO_Write(LED_GREEN, GPIO_HIGH);
-            Delay(1000);
-            GPIO_Write(LED_GREEN, GPIO_LOW);
-            GPIO_Write(LED_YELLOW, GPIO_HIGH);
-            Delay(500);
-            GPIO_Write(LED_YELLOW, GPIO_LOW);
-            GPIO_Write(LED_RED, GPIO_HIGH);
-            Delay(1000);
-            GPIO_Write(LED_RED, GPIO_LOW);
+            PWM_SetDutyCycle(LED_YELLOW, 255);
         }
-        //GALBEN INTERMITENT
         else
         {
-            GPIO_Write(LED_RED, GPIO_LOW);
-            GPIO_Write(LED_GREEN, GPIO_LOW);
-            GPIO_Write(LED_YELLOW, GPIO_HIGH);
-            Delay(500);
-            GPIO_Write(LED_YELLOW, GPIO_LOW);
-            Delay(100);
+            PWM_SetDutyCycle(LED_RED, 255);
         }
+
+        Delay(200);
     }
 }
