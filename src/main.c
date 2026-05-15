@@ -8,7 +8,7 @@
 #include "utils/delay.h"
 
 // LED-uri
-#define LED_GREEN   D8
+#define LED_GREEN   D11
 #define LED_YELLOW  D9
 #define LED_RED     D10
 
@@ -18,8 +18,8 @@
 uint16_t temp_value;
 
 /* praguri simple (calibratezi tu) */
-#define COLD_THRESHOLD   400
-#define HOT_THRESHOLD    700
+#define COLD_THRESHOLD   500
+#define HOT_THRESHOLD    560
 
 int main(void)
 {
